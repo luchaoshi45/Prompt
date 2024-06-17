@@ -8,9 +8,10 @@ import requests
 # 本代码为测试用例，选手可自己调用本地大语言模型接口进行测试，具体的格式为OpenAI格式的接口形式
 # openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
 # openai_api_base = "https://api.chatanywhere.tech/v1"
-# client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+# openai = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
 
 openai.api_key = 'sk-proj-u3JUd02340A578VyNFRWT3BlbkFJfYjKqtWDYpLMU0lPYugb'
+# openai.api_base = 'https://api.chatanywhere.tech/v1'
 
 # 代理运行在 7890 端口
 import os
