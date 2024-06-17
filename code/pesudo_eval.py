@@ -4,10 +4,15 @@ from openai import OpenAI
 import requests
 
 # 本代码为测试用例，选手可自己调用本地大语言模型接口进行测试，具体的格式为OpenAI格式的接口形式
-openai_api_key = "EMPTY"  #请参照openai api使用文档，按照实际填写
-openai_api_base = " "
+openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
+openai_api_base = "https://api.chatanywhere.tech/v1"
 client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
 
+# 评估哪类问题
+EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+# EVAL = ['text2sql']
+# EVAL = ['multiple_choice']
+# EVAL = ['true_false_question']
 
 def evaluate_mcq(predicted_answer, label):
     return predicted_answer.upper().strip() == label.upper().strip()
@@ -48,16 +53,16 @@ class eval_submission(submission):
         # print(f"调用模型进行测试,用户的prompt为：{constructed_prompts}")
         llm_response = client.chat.completions.create(
             messages=messages,
-            model=" ",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
+            model="gpt-3.5-turbo",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
             max_tokens=2048,
-            temperature= ,           #  temperature 实际跑分时默认设置为0.0，避免随机性
+            temperature= 0.0,           #  temperature 实际跑分时默认设置为0.0，避免随机性
             stream=False  
         )
         llm_outputs = llm_response.choices[0].message.content
         return llm_outputs
 
 if __name__ == "__main__":
-    user_submission = eval_submission(table_meta_path = "样例数据/sample_tables.json")
+    user_submission = eval_submission(table_meta_path ="样例数据/sample_tables.json")
     question_jsonl_filename = "样例数据/sample_question.jsonl"
     gt_jsonl_filename = "样例数据/sample_answer.jsonl"
     answer_dict = {}
@@ -72,12 +77,21 @@ if __name__ == "__main__":
     with open(question_jsonl_filename, 'r', encoding='utf-8') as file:
         for line in file:
             data = json.loads(line)
-            print(data)
+            if data['question_type'] not in EVAL:
+                continue
+
             message = user_submission.construct_prompt(data)
             response = user_submission.run_inference_llm(message)
             question_id = data['question_id']
             question_type = data['question_type']
-            
+
+            user_submission.log(response)
+            user_submission.log(answer_dict[question_id])
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
+
             if question_type == "text2sql":
                 db_name = data['db_id']
                 label = answer_dict[question_id]
