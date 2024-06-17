@@ -1,12 +1,21 @@
+import openai
+
 from submit import submission
 import json
 from openai import OpenAI
 import requests
 
 # 本代码为测试用例，选手可自己调用本地大语言模型接口进行测试，具体的格式为OpenAI格式的接口形式
-openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
-openai_api_base = "https://api.chatanywhere.tech/v1"
-client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+# openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
+# openai_api_base = "https://api.chatanywhere.tech/v1"
+# client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+
+openai.api_key = 'sk-proj-u3JUd02340A578VyNFRWT3BlbkFJfYjKqtWDYpLMU0lPYugb'
+
+# 代理运行在 7890 端口
+import os
+os.environ["http_proxy"] = "http://localhost:7890"
+os.environ["https_proxy"] = "http://localhost:7890"
 
 # 评估哪类问题
 EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
@@ -51,7 +60,7 @@ class eval_submission(submission):
             pass
         messages = constructed_prompts
         # print(f"调用模型进行测试,用户的prompt为：{constructed_prompts}")
-        llm_response = client.chat.completions.create(
+        llm_response = openai.chat.completions.create(
             messages=messages,
             model="gpt-3.5-turbo",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
             max_tokens=2048,
