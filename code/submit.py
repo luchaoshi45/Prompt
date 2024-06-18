@@ -50,7 +50,7 @@ class submission():
             {"role": "user", "content": user_prompt}
         ]
 
-        self.log(messages)
+        # self.log(messages)
         return messages
 
     # 此方法会被跑分服务器调用， messages 选手的 construct_prompt() 返回的结果
@@ -65,13 +65,13 @@ class submission():
         :param user_question: 用户问题
         :return: 提示词
         '''
-        system_prompt = "你是一个数据库专家, 你只能回答 SQL 语句"
+        system_prompt = "你是一个数据库专家, 你只能回答可以直接执行的SQL语句，不要输出其他内容，比如输出 SELECT * FROM User。"
 
         user_question = current_user_question['user_question']
         current_db_id = current_user_question['db_id']
         cur_db_info = self.parse_table(self.table_meta_path)[current_db_id]
 
-        user_prompt = (f"我有一个数据库，"
+        user_prompt = (f"我有一个SQL数据库，"
                        f"其具体格式为：{cur_db_info}，"
                        f"我想要查询：{user_question}，"
                        f"请根据上述提供的信息，生成正确运行的SQL语句。"
@@ -85,7 +85,7 @@ class submission():
         :param options:
         :return:
         '''
-        system_prompt = "你是一个数据库专家，你只能回答 A B C D 其中的一个"
+        system_prompt = "你是一个SQL数据库专家，你只能回答 A B C D 其中的一个。"
 
         user_question = current_user_question['user_question']
         options = ("A." + current_user_question['optionA'] + '；'
@@ -93,11 +93,11 @@ class submission():
                    + "C." + current_user_question['optionC'] + '；'
                    + "D." + current_user_question['optionD'])
 
-        user_prompt = (f"我有一个单项选择题，"
+        user_prompt = (f"我有一个关于SQL数据库的单项选择题，"
                        f"其题目为：{user_question}，"
                        f"选项为：{options}，"
                        f"请给出正确的选项。"
-                       f"请注意，只需要输出正确选项的字母，不要输出其他内容。")
+                       f"请注意，你只能回答 A B C D 其中的一个，不要输出其他内容。")
         return system_prompt, user_prompt
 
     def true_false_question(self, current_user_question):
@@ -106,7 +106,7 @@ class submission():
         :param user_question:
         :return:
         '''
-        system_prompt = "你是一个数据库专家， 你只能回答问题真伪(True/False)"
+        system_prompt = "你是一个SQL数据库专家， 你只能回答问题真伪(True/False)。"
 
         user_question = current_user_question['user_question']
         user_prompt = (f"我有一个判断题，"
