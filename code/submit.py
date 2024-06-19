@@ -6,7 +6,6 @@ class submission():
     def __init__(self, table_meta_path):
         self.table_meta_path = table_meta_path
         self.is_log = False
-        self.db_metadata = self.parse_table(table_meta_path)
 
     # 此函数不可改动, 与跑分服务器端逻辑一致， 返回值 grouped_by_db_id 是数据库的元数据（包含所有验证测试集用到的数据库）
     # 请不要对此函数做任何改动
@@ -59,75 +58,61 @@ class submission():
     def run_inference_llm(self, messages):
         pass
 
-    def get_db_description(self, db_id):
-        cur_db_info = self.db_metadata.get(db_id, [])
-        cur_db_info = cur_db_info[0]
-        return str(cur_db_info)
-
     def text2sql(self, current_user_question):
-        context = "你是一个数据库专家，需要帮助用户查询一个SQL数据库。"
-        objective = "生成一个正确的SQL查询语句，以便用户能够从数据库中获取所需的信息。"
-        action = "阅读用户的问题，并基于提供的数据库格式信息生成SQL查询语句。"
-        support = (
-            "数据库的具体格式如下：\n"
-            f"{self.get_db_description(current_user_question['db_id'])}\n"
-        )
-        technology = "请只输出可直接执行的SQL查询语句，不要输出任何额外内容。"
+        '''
+        文本到 sql 转化
+        :param cur_db_info: 数据库格式信息
+        :param user_question: 用户问题
+        :return: 提示词
+        '''
+        system_prompt = "你是一个数据库专家, 你只能回答 SQL 语句"
 
-        system_prompt = (
-            f"{context}\n\n"
-            f"{objective}\n\n"
-            f"{action}\n\n"
-            f"{support}\n\n"
-            f"{technology}"
-        )
+        user_question = current_user_question['user_question']
+        current_db_id = current_user_question['db_id']
+        cur_db_info = self.parse_table(self.table_meta_path)[current_db_id]
 
-        user_prompt = current_user_question['user_question']
+        user_prompt = (f"我有一个数据库，"
+                       f"其具体格式为：{cur_db_info}，"
+                       f"我想要查询：{user_question}，"
+                       f"请根据上述提供的信息，生成正确运行的SQL语句。"
+                       f"请注意，只需要输出SQL语句，不要输出其他内容。")
         return system_prompt, user_prompt
 
     def multiple_choice(self, current_user_question):
-        system_prompt = "你在帮我做SQL选择题目，你的回答必须简洁，因为我只认识 A B C D，所以你只能输出 A B C D。"
+        '''
+        多选题
+        :param user_question:
+        :param options:
+        :return:
+        '''
+        system_prompt = "你是一个数据库专家，你只能回答 A B C D 其中的一个"
 
-        context = (
-            f"用户的问题是：{current_user_question['user_question']}。\n"
-            "选项如下：\n"
-            f"A. {current_user_question['optionA']}；\n"
-            f"B. {current_user_question['optionB']}；\n"
-            f"C. {current_user_question['optionC']}；\n"
-            f"D. {current_user_question['optionD']}"
-        )
+        user_question = current_user_question['user_question']
+        options = ("A." + current_user_question['optionA'] + '；'
+                   + "B." + current_user_question['optionB'] + '；'
+                   + "C." + current_user_question['optionC'] + '；'
+                   + "D." + current_user_question['optionD'])
 
-        objective = "输出 A B C D 其中一个。"
-        action = "阅读用户的问题及选项，做出认真合理的分析。"
-        support = "这些题目往往都是计算机专业的工作的面试题目，你可以参考相关的场景。"
-        technology = "mysql 数据库的知识。"
-
-        user_prompt = (
-            f"{context}\n\n"
-            f"{objective}\n\n"
-            f"{action}\n\n"
-            f"{support}\n\n"
-            f"{technology}"
-        )
-
+        user_prompt = (f"我有一个单项选择题，"
+                       f"其题目为：{user_question}，"
+                       f"选项为：{options}，"
+                       f"请给出正确的选项。"
+                       f"请注意，只需要输出正确选项的字母，不要输出其他内容。")
         return system_prompt, user_prompt
 
     def true_false_question(self, current_user_question):
-        context = "你是一个SQL数据库专家，需要帮助用户判断一个关于SQL数据库的命题真伪。"
-        objective = "判断命题的真伪，以便用户能够了解其准确性。"
-        action = "阅读用户的问题，并判断其是真还是假。"
-        support = f"用户的问题是：{current_user_question['user_question']}"
-        technology = "请只输出 True 或 False，不要输出任何额外内容。"
+        '''
+        判断题
+        :param user_question:
+        :return:
+        '''
+        system_prompt = "你是一个数据库专家， 你只能回答问题真伪(True/False)"
 
-        system_prompt = (
-            f"{context}\n\n"
-            f"{objective}\n\n"
-            f"{action}\n\n"
-            f"{support}\n\n"
-            f"{technology}"
-        )
-
-        user_prompt = current_user_question['user_question']
+        user_question = current_user_question['user_question']
+        user_prompt = (f"我有一个判断题，"
+                       f"其题目为：{user_question}"
+                       f"请判断问题真伪(True/False)。"
+                       f"请注意，只需要输出正确选项的判断结果，不要输出其他内容。")
         return system_prompt, user_prompt
 
     def log(self, x, path="recode.log"):
