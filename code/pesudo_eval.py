@@ -19,9 +19,9 @@ os.environ["http_proxy"] = "http://localhost:7890"
 os.environ["https_proxy"] = "http://localhost:7890"
 
 # 评估哪类问题
-EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+# EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
 # EVAL = ['text2sql']
-# EVAL = ['multiple_choice']
+EVAL = ['multiple_choice']
 # EVAL = ['true_false_question']
 
 def evaluate_mcq(predicted_answer, label):
@@ -118,5 +118,7 @@ if __name__ == "__main__":
             if judge_result:
                 print("right")
                 num_correct_answer += 1
+            else:
+                print("error")
 
     print(f"Accuracy:{num_correct_answer/num_questions}")
