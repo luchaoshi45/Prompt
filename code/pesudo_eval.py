@@ -6,12 +6,13 @@ from openai import OpenAI
 import requests
 
 # 本代码为测试用例，选手可自己调用本地大语言模型接口进行测试，具体的格式为OpenAI格式的接口形式
-openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
-openai_api_base = "https://api.chatanywhere.tech/v1"
-openai = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+# openai_api_key = "sk-b4MHQYUadvMtIqax6uRMKEUSwwYd50QbJyxTfZOIGwmxxE3U"  #请参照openai api使用文档，按照实际填写
+# openai_api_base = "https://api.chatanywhere.tech/v1"
+# openai = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
 
-# openai.api_key = 'sk-proj-u3JUd02340A578VyNFRWT3BlbkFJfYjKqtWDYpLMU0lPYugb'
-# openai.api_base = 'https://api.chatanywhere.tech/v1'
+openai.api_key = 'sk-TA1eIqqydtm1695499D7795bB64b4f0180B0B222A425E83e'
+openai.base_url = "https://free.gpt.ge/v1/"
+openai.default_headers = {"x-foo": "true"}
 
 # 代理运行在 7890 端口
 import os
@@ -19,7 +20,7 @@ os.environ["http_proxy"] = "http://localhost:7890"
 os.environ["https_proxy"] = "http://localhost:7890"
 
 # 评估哪类问题
-EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+# EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
 EVAL = ['text2sql']
 # EVAL = ['multiple_choice']
 # EVAL = ['true_false_question']
@@ -82,8 +83,7 @@ if __name__ == "__main__":
         for line in gt_file:
             data = json.loads(line)
             answer_dict[data['question_id']]=data['answer']
-            num_questions += 1
-    
+
     with open(question_jsonl_filename, 'r', encoding='utf-8') as file:
         for line in file:
             data = json.loads(line)
@@ -97,10 +97,7 @@ if __name__ == "__main__":
 
             user_submission.log(response)
             user_submission.log(answer_dict[question_id])
-            user_submission.log(100 * "-")
-            user_submission.log(100 * "-")
-            user_submission.log(100 * "-")
-            user_submission.log(100 * "-")
+
 
             if question_type == "text2sql":
                 db_name = data['db_id']
@@ -115,10 +112,17 @@ if __name__ == "__main__":
                 label = answer_dict[question_id]
                 judge_result = evaluate_mcq(response, label)
 
+            num_questions += 1
             if judge_result:
                 print("right")
                 num_correct_answer += 1
             else:
                 print("error")
+            print(f"Dynamic accuracy:{num_correct_answer / num_questions}")
 
+            user_submission.log(f"Dynamic accuracy:{num_correct_answer / num_questions}")
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
+            user_submission.log(100 * "-")
     print(f"Accuracy:{num_correct_answer/num_questions}")

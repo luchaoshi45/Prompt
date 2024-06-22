@@ -1,4 +1,5 @@
 import json
+from lib import txt2sql_lib
 
 # 此类会被跑分服务器继承， 可以在类中自由添加自己的prompt构建逻辑, 除了parse_table 和 run_inference_llm 两个方法不可改动
 # 注意千万不可修改类名和下面已提供的三个函数名称和参数， 这三个函数都会被跑分服务器调用
@@ -65,11 +66,17 @@ class submission():
         :param user_question: 用户问题
         :return: 提示词
         '''
+
+        format = (
+            "不要输出任何额外字符或文字，导致SQL执行错误，仍然判定为错误。"
+            "不要做出任何解释。"
+        )
+
         system_prompt = (
-             "你是SQL数据库专家，你回答我之后给你的文本到SQL语句转换题，"
-             "你的输出会被我后端的服务器程序直接捕获，"
-             "它通过运行捕获的结果，判断你的回答是否正确，"
-             "如果包含任何额外字符或文字，导致SQL执行错误，仍然判定为错误。"
+            f"我想让你充当SQL数据库专家，"
+            f"我将提供给你数据表结构以及我的需求，你的目标是告知我性能最优的可执行的SQL语句。"
+            f"你的输出会被我后端的服务器程序直接捕获，它通过运行捕获的结果，判断你的回答是否正确。"
+            f"{format}"
         )
 
         user_question = current_user_question['user_question']
@@ -77,13 +84,14 @@ class submission():
         cur_db_info = self.parse_table(self.table_meta_path)[current_db_id]
 
         user_prompt = (
-            f"问题: {user_question} \n"
-            f"数据库信息: {cur_db_info}\n"
-            f"给我最简洁的输出"
+            f"问题：{user_question}"
+            f"数据库；{cur_db_info}"
+            f"输出格式：{format}"
+            f"参考语法：{txt2sql_lib}"
         )
         return system_prompt, user_prompt
 
-    def multiple_choice(self, current_user_question):
+    def multiple_choice(self, info):
         '''
         多选题
         :param user_question:
@@ -91,22 +99,19 @@ class submission():
         :return:
         '''
         system_prompt = (
-            "你是SQL数据库专家，你回答我之后给你的单选题，"
-            "你的输出会被我后端的服务器程序直接捕获，"
-            "它只能识别 A B C D，并且它只能捕获一个字符。"
+            "【你回答我之后给你的选择题  你的输出被我的程序直接捕获  它只能识别 A B C D  你的任何额外的输出都会导致命性错误】"
         )
 
-        user_question = current_user_question['user_question']
-        options = ("A." + current_user_question['optionA'] + '；'
-                   + "B." + current_user_question['optionB'] + '；'
-                   + "C." + current_user_question['optionC'] + '；'
-                   + "D." + current_user_question['optionD'])
-
+        question = info['user_question']
         user_prompt = (
-            f"项选题:{user_question} \n"
-            f"选项为：{options} \n"
-            f"给我最简洁的输出"
+            f"【问题：{question}？（仅输出选项前的字母，如 A、B、C、D）】\r"
+            f"【A {info['optionA']}  "
+            f"B {info['optionB']}  "
+            f"C {info['optionC']}  "
+            f"D {info['optionD']}】 \r"
+            f"【请仅输入选项前的字母 任何额外的输出都会导致命性错误】"
         )
+
         return system_prompt, user_prompt
 
     def true_false_question(self, current_user_question):
@@ -116,27 +121,27 @@ class submission():
         :return:
         '''
         system_prompt = (
-            "你是SQL数据库专家，你回答我之后给你的判断题，"
-            "你的输出会被我后端的服务器程序直接捕获，"
-            "它只能识别 True False。"
+            "你回答我之后给你的判断题  你的输出被我的程序直接捕获  它只能识别 True False  你的任何额外的输出都会导致命性错误"
         )
 
         user_question = current_user_question['user_question']
         user_prompt = (
-            f"判断题：{user_question}"
-            f"给我最简洁的输出"
+            f"【判断 {user_question}】"
+            f"分析关键词  回答 True False  任何额外的输出都会导致命性错误"
         )
         return system_prompt, user_prompt
 
-    def log(self, x, path="recode.log"):
+    def log(self, x, path="../log/"):
         import logging, os
-        if not self.is_log:
-            self.is_log = True
-            if os.path.exists(path):
-                os.remove(path)
+        from datetime import datetime
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        log_filename = f"{path}{timestamp}.log"
 
         logging.basicConfig(
-            filename=path,
+            filename=log_filename,
             level=logging.INFO,
             format='%(asctime)s - %(message)s',
             encoding='utf-8',
