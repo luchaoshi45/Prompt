@@ -1,5 +1,4 @@
 import json
-from lib import txt2sql_lib
 
 # 此类会被跑分服务器继承， 可以在类中自由添加自己的prompt构建逻辑, 除了parse_table 和 run_inference_llm 两个方法不可改动
 # 注意千万不可修改类名和下面已提供的三个函数名称和参数， 这三个函数都会被跑分服务器调用
@@ -59,6 +58,33 @@ class submission():
     def run_inference_llm(self, messages):
         pass
 
+    def transform_dict(self, dictionary):
+        transformed_dict = {}
+
+        # Transform table names
+        table_names = dictionary.get('table_names_original', [])
+        transformed_dict['table_names'] = table_names
+
+        # Transform column names
+        column_names_original = dictionary.get('column_names_original', [])
+        column_names_dict = {}
+        for index, name in column_names_original:
+            if index not in column_names_dict:
+                column_names_dict[index] = []
+            column_names_dict[index].append(name)
+
+        transformed_dict['column_names'] = column_names_dict
+
+        # Transform foreign keys
+        foreign_keys = dictionary.get('foreign_keys', [])
+        transformed_dict['foreign_keys'] = foreign_keys
+
+        # Transform primary keys
+        primary_keys = dictionary.get('primary_keys', [])
+        transformed_dict['primary_keys'] = primary_keys
+
+        return transformed_dict
+
     def text2sql(self, current_user_question):
         '''
         文本到 sql 转化
@@ -66,28 +92,30 @@ class submission():
         :param user_question: 用户问题
         :return: 提示词
         '''
-
-        format = (
-            "不要输出任何额外字符或文字，导致SQL执行错误，仍然判定为错误。"
-            "不要做出任何解释。"
-        )
-
         system_prompt = (
-            f"我想让你充当SQL数据库专家，"
-            f"我将提供给你数据表结构以及我的需求，你的目标是告知我性能最优的可执行的SQL语句。"
-            f"你的输出会被我后端的服务器程序直接捕获，它通过运行捕获的结果，判断你的回答是否正确。"
-            f"{format}"
+            "您答我之后给你的文本转 SQL 语句题  您的输出将被我的程序直接捕获  它将直接调用 SQL 数据库执行您的输出  您的任何额外的输出都会导致命性错误  "
+            "我希望您在回答我之前充当 SQL 终端  首先执行您输出  确保准确无误后在输出给我的程序。"
         )
 
         user_question = current_user_question['user_question']
         current_db_id = current_user_question['db_id']
         cur_db_info = self.parse_table(self.table_meta_path)[current_db_id]
 
+        try:
+            transformed_dict = self.transform_dict(cur_db_info[0])
+        except Exception as e:
+            transformed_dict = "参考数据库信息"
+        else:
+            pass
+
+        if len(cur_db_info[0]) > 1000:
+            transformed_dict = "参考数据库信息"
+
         user_prompt = (
-            f"问题：{user_question}"
-            f"数据库；{cur_db_info}"
-            f"输出格式：{format}"
-            f"参考语法：{txt2sql_lib}"
+            f"【需要转化 SQL 的问题 {user_question}】"
+            f"【数据库信息 {cur_db_info[0]}】"
+            f"【解析的数据库信息 {transformed_dict}】"
+            f"任何额外的输出都会导致命性错误"
         )
         return system_prompt, user_prompt
 

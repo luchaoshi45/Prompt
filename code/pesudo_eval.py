@@ -20,8 +20,8 @@ os.environ["http_proxy"] = "http://localhost:7890"
 os.environ["https_proxy"] = "http://localhost:7890"
 
 # 评估哪类问题
-# EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
-EVAL = ['text2sql']
+EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+# EVAL = ['text2sql']
 # EVAL = ['multiple_choice']
 # EVAL = ['true_false_question']
 
@@ -29,9 +29,33 @@ def evaluate_mcq(predicted_answer, label):
     return predicted_answer.upper().strip() == label.upper().strip()
 
 def evaluate_sql(predicted_answer, label):
-    print("****该评估方法仅提供一个虚拟评测用例，仅提供给选手进行调试使用。实际评测时，正确性则由SQL执行结果是否正确的判断。****")
-    print(f"选手Prompt生成的SQL:{predicted_answer},\n标准答案：{label}")
-    return predicted_answer.strip() == label.strip()
+    system_prompt = "判断答案1和答案2执行结果否一致  你的输出被我的程序直接捕获  它只能识别 True False  你的任何额外的输出都会导致命性错误"
+    user_prompt = (
+        f"答案1:{predicted_answer}\n"
+        f"答案2：{label}\n"
+        f"只 True False 任何额外的输出都会导致命性错误"
+    )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    llm_response = openai.chat.completions.create(
+        messages=messages,
+        model="gpt-3.5-turbo",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
+        max_tokens=2048,
+        temperature=0.0,  # temperature 实际跑分时默认设置为0.0，避免随机性
+        stream=False
+    )
+    llm_outputs = llm_response.choices[0].message.content
+    if "True" in llm_outputs or "执行结果是一致的" in llm_outputs or "执行结果一致" in llm_outputs:
+        return True
+    else:
+        print(llm_outputs)
+        return False
+
+
+
 
 class eval_submission(submission):
     def parse_table(self, table_meta_path):
