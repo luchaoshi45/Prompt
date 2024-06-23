@@ -19,9 +19,14 @@ import os
 os.environ["http_proxy"] = "http://localhost:7890"
 os.environ["https_proxy"] = "http://localhost:7890"
 
+client = OpenAI(
+    api_key="sk-0738f7176f0a44e8ae8bc1569c2b6032",
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+)
+
 # 评估哪类问题
-EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
-# EVAL = ['text2sql']
+# EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+EVAL = ['text2sql']
 # EVAL = ['multiple_choice']
 # EVAL = ['true_false_question']
 
@@ -85,16 +90,26 @@ class eval_submission(submission):
         elif isinstance(constructed_prompts, dict):
             pass
         messages = constructed_prompts
-        # print(f"调用模型进行测试,用户的prompt为：{constructed_prompts}")
-        llm_response = openai.chat.completions.create(
+
+        response = client.chat.completions.create(
             messages=messages,
-            model="gpt-3.5-turbo",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
-            max_tokens=2048,
-            temperature= 0.0,           #  temperature 实际跑分时默认设置为0.0，避免随机性
-            stream=False  
+            model="qwen1.5-14b-chat",
+            max_tokens=2000,
+            temperature=0.0,
+            stream=False
         )
-        llm_outputs = llm_response.choices[0].message.content
+        llm_outputs = response.choices[0].message.content
         return llm_outputs
+
+        # llm_response = openai.chat.completions.create(
+        #     messages=messages,
+        #     model="gpt-3.5-turbo",  # 这里填写所选择的LLM名称，推荐使用Qwen1.5-14B-Chat模型进行线下开发评估
+        #     max_tokens=2048,
+        #     temperature=0.0,           #  temperature 实际跑分时默认设置为0.0，避免随机性
+        #     stream=False
+        # )
+        # llm_outputs = llm_response.choices[0].message.content
+        # return llm_outputs
 
 if __name__ == "__main__":
     user_submission = eval_submission(table_meta_path ="样例数据/sample_tables.json")
