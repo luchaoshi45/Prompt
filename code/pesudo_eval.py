@@ -25,8 +25,8 @@ client = OpenAI(
 )
 
 # 评估哪类问题
-# EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
-EVAL = ['text2sql']
+EVAL = ['text2sql', 'multiple_choice', 'true_false_question']
+# EVAL = ['text2sql']
 # EVAL = ['multiple_choice']
 # EVAL = ['true_false_question']
 
