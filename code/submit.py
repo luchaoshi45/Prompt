@@ -1,4 +1,5 @@
 import json
+from grammar import *
 
 # 此类会被跑分服务器继承， 可以在类中自由添加自己的prompt构建逻辑, 除了parse_table 和 run_inference_llm 两个方法不可改动
 # 注意千万不可修改类名和下面已提供的三个函数名称和参数， 这三个函数都会被跑分服务器调用
@@ -113,7 +114,7 @@ class submission():
 
         user_prompt = (
             f"【转化之后的描述为SQL语句 {user_question}】"
-            # f"【数据库信息 {cur_db_info[0]}】"
+            f"【数据库信息 {cur_db_info[0]}】"
             # f"【解析的数据库信息 {transformed_dict}】"
             f"【你只能说英语  你只能输出SQL语句  你的任何额外的输出都会导致命性错误】"
             f"【你只能输出SQL语句  你不要输出任何解释  你的任何非SQL语句输出都会造成灾难性后果】"
@@ -132,13 +133,15 @@ class submission():
         )
 
         question = info['user_question']
+        grammar = self.get_grammar_info(question)
         user_prompt = (
             f"【问题：{question}？（仅输出选项前的字母，如 A、B、C、D）】\r"
             f"【A {info['optionA']}  "
             f"B {info['optionB']}  "
             f"C {info['optionC']}  "
             f"D {info['optionD']}】 \r"
-            f"【请仅输入选项前的字母 任何额外的输出都会导致命性错误】"
+            f"【请仅输出选项前的字母 任何额外的输出都会导致命性错误】"
+            f"【相关信息 {grammar}】"
         )
 
         return system_prompt, user_prompt
@@ -150,13 +153,16 @@ class submission():
         :return:
         '''
         system_prompt = (
-            "你回答我之后给你的判断题  你的输出被我的程序直接捕获  它只能识别 True False  你的任何额外的输出都会导致命性错误"
+            "请仅输出 True 或 False 你的任何额外的输出(例如 .)都会导致命性错误"
         )
 
         user_question = current_user_question['user_question']
+        grammar = self.get_grammar_info(user_question)
+
         user_prompt = (
-            f"【判断 {user_question}】"
-            f"分析关键词  回答 True False  任何额外的输出都会导致命性错误"
+            f"【判断题 {user_question}】"
+            f"【请仅输出 True 或 False 任何额外的输出都会导致命性错误】"
+            f"【相关信息 {grammar}】"
         )
         return system_prompt, user_prompt
 
@@ -178,3 +184,16 @@ class submission():
 
         # 写入日志
         logging.info(x)
+
+    def get_grammar_info(self, info):
+        out = ""
+        try:
+            for k, v in GRAMMAR.items():
+                if k in info:
+                    out += str(v)
+        except Exception as e:
+            print(e)
+        return out
+
+
+
