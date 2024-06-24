@@ -113,7 +113,7 @@ class submission():
 
         user_prompt = (
             f"【转化之后的描述为SQL语句 {user_question}】"
-            f"【数据库信息 {cur_db_info[0]}】"
+            # f"【数据库信息 {cur_db_info[0]}】"
             # f"【解析的数据库信息 {transformed_dict}】"
             f"【你只能说英语  你只能输出SQL语句  你的任何额外的输出都会导致命性错误】"
             f"【你只能输出SQL语句  你不要输出任何解释  你的任何非SQL语句输出都会造成灾难性后果】"
