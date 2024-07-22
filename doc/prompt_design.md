@@ -61,7 +61,7 @@ user_prompt = (
 本题通过验证SQL语句在数据库的执行结果，判断题目是否回答正确。
 1.让大模型充分了解问题
 2.system_prompt 限定你只能回答问题真伪(True/False)
-3.user_prompt 强调你只能回答 A B C D 其中的一个，不要输出其他内容
+3.user_prompt 强调你只能回答 True/False 其中的一个，不要输出其他内容
 ```
 ### Prompt
 #### 系统提示词：
